@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace cntema3
 {
@@ -140,7 +141,40 @@ namespace cntema3
 
                 return res;
             }
-            
+
+            public static bool  operator ==(SparseMatrix a, SparseMatrix b)
+            {
+                var bminus = ~b;
+                var sum = a + b;
+                for (var i = 0; i < sum.Count(); i++)
+                {
+                    if (sum[i].Val > SparseMatrix.Epsilon)
+                    {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            public const double Epsilon = 0.0001;
+
+            public static SparseMatrix operator ~(SparseMatrix a)
+            {
+                var result = new SparseMatrix();
+                for (var i = 0; i < a.Count(); i++)
+                    result.Push(new SparseElement()
+                    {
+                        Row = a[i].Row,
+                        Col = a[i].Col,
+                        Val = 0 - a[i].Val
+                    });
+                return result;
+            }
+            public static bool operator !=(SparseMatrix a, SparseMatrix b)
+            {
+                return !(a == b);
+            }
+
             // ReSharper disable once PossibleNullReferenceException
             // ReSharper disable once AssignNullToNotNullAttribute
             public static SparseMatrix ReadSparseMatrix(string path)
@@ -253,8 +287,8 @@ namespace cntema3
         private static readonly string BasePath = Directory.GetParent(Directory.GetParent(Directory.GetCurrentDirectory()).FullName).FullName;
         private static readonly string pathMatrixA = $@"{BasePath}\x.txt";
         private static readonly string pathMatrixB = $@"{BasePath}\y.txt";
-        // private static readonly string pathMatrixAplusB = $@"{BasePath}\b.txt";
-        // private static readonly string pathMatrixAoriB = $@"{BasePath}\b.txt";
+        private static readonly string pathMatrixAplusB = $@"{BasePath}\b.txt";
+        private static readonly string pathMatrixAoriB = $@"{BasePath}\b.txt";
         public static void Main()
         {
             Console.WriteLine(pathMatrixA);
@@ -270,6 +304,7 @@ namespace cntema3
             // var t = a.Transpusa();
             // t.Sort();
             // Console.WriteLine(t);
+            var aorib = SparseMatrix.ReadSparseMatrix(pathMatrixA);
             var product = a.multiplica(b);
             product.Sort();
             Console.WriteLine(product);   
