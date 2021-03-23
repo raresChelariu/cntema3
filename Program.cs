@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 
 namespace cntema3
 {
@@ -37,24 +36,18 @@ namespace cntema3
             private SparseElement this[int i] => _matrix[i];
             private void Push(SparseElement e) => _matrix.Add(e);
             public void Sort() => _matrix.Sort();
-            
+
             private int Count() => _matrix.Count;
             public int Size { get; set; }
+
             // ReSharper disable once MemberCanBePrivate.Local
             public override string ToString()
             {
                 return _matrix.Aggregate(string.Empty, (current, t) => current + t + Environment.NewLine);
             }
 
-            public SparseMatrix()
-            {
-                
-            }
-            
-            public SparseMatrix(string filePath)
-            {
-                
-            }
+            public SparseMatrix() {}
+
             private SparseElement? this[int row, int col]
             {
                 get
@@ -142,10 +135,10 @@ namespace cntema3
                 return res;
             }
 
-            public static bool  operator ==(SparseMatrix a, SparseMatrix b)
+            public static bool operator ==(SparseMatrix a, SparseMatrix b)
             {
                 var bminus = ~b;
-                var sum = a + b;
+                var sum = a + bminus;
                 for (var i = 0; i < sum.Count(); i++)
                 {
                     if (sum[i].Val > SparseMatrix.Epsilon)
@@ -170,6 +163,7 @@ namespace cntema3
                     });
                 return result;
             }
+
             public static bool operator !=(SparseMatrix a, SparseMatrix b)
             {
                 return !(a == b);
@@ -188,12 +182,12 @@ namespace cntema3
                 while (null != (line = reader.ReadLine()))
                 {
                     var tokens = line.Split(", ".ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
-                    
+
                     var elem = new SparseElement()
                     {
                         Val = double.Parse(tokens[0]),
-                        Row = int.Parse(tokens[1]), 
-                        Col = int.Parse(tokens[2]), 
+                        Row = int.Parse(tokens[1]),
+                        Col = int.Parse(tokens[2]),
                     };
                     if (result[elem.Row, elem.Col] == null)
                         result.Push(elem);
@@ -207,17 +201,122 @@ namespace cntema3
                         };
                     }
                 }
+
                 return result;
             }
-            
+
             public static SparseMatrix ReadTriDiagonal(string path)
             {
-                throw new NotImplementedException();
+                int lineIndex = 1;
+                var result = new SparseMatrix();
+                var reader = new StreamReader(path);
+                result.Size = int.Parse(reader.ReadLine());
+                var p = int.Parse(reader.ReadLine());
+                var q = int.Parse(reader.ReadLine());
+                
+                
+                reader.ReadLine();
+                lineIndex += 4;
+                var line = string.Empty;
+                
+                
+
+                int counter = 0;
+                while (counter < result.Size)
+                {
+                    line = reader.ReadLine();
+                    lineIndex++;
+                    var tokens = line.Split(", ".ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
+                    if (tokens.Length == 0)
+                    {
+                        Console.WriteLine($"###{line}###");
+                    }
+                    var elem = new SparseElement()
+                    {
+                        Val = double.Parse(tokens[0]),
+                        Row = counter,
+                        Col = counter,
+                    };
+                    if (result[elem.Row, elem.Col] == null)
+                        result.Push(elem);
+                    else
+                    {
+                        result[elem.Row, elem.Col] = new SparseElement()
+                        {
+                            Row = elem.Row,
+                            Col = elem.Col,
+                            Val = result[elem.Row, elem.Col]!.Val + elem.Val
+                        };
+                    }
+
+                    counter++;
+                }
+                reader.ReadLine();
+                
+                int counter2 = 0;
+                while (counter2 < result.Size - p)
+                {
+                    line = reader.ReadLine();
+                    lineIndex++;
+                    var tokens = line.Split(", ".ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
+                    if (tokens.Length == 0)
+                    {
+                        Console.WriteLine($"%%%{lineIndex}%%%");
+                    }
+                    var elem = new SparseElement()
+                    {
+                        Val = double.Parse(tokens[0]),
+                        Row = counter2,
+                        Col = counter2 + p,
+                    };
+                    if (result[elem.Row, elem.Col] == null)
+                        result.Push(elem);
+                    else
+                    {
+                        result[elem.Row, elem.Col] = new SparseElement()
+                        {
+                            Row = elem.Row,
+                            Col = elem.Col,
+                            Val = result[elem.Row, elem.Col]!.Val + elem.Val
+                        };
+                    }
+
+                    counter2++;
+                }
+                reader.ReadLine();
+                var counter3 = 0;
+                while (counter3 < result.Size - q)
+                {
+                    line = reader.ReadLine();
+                    var tokens = line.Split(", ".ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
+
+                    var elem = new SparseElement()
+                    {
+                        Val = double.Parse(tokens[0]),
+                        Row = counter3 + q,
+                        Col = counter3,
+                    };
+                    if (result[elem.Row, elem.Col] == null)
+                        result.Push(elem);
+                    else
+                    {
+                        result[elem.Row, elem.Col] = new SparseElement()
+                        {
+                            Row = elem.Row,
+                            Col = elem.Col,
+                            Val = result[elem.Row, elem.Col]!.Val + elem.Val
+                        };
+                    }
+                    counter3++;
+                }
+
+                return result;
             }
+
             public SparseMatrix Transpusa()
             {
                 SparseMatrix result = new();
-                
+
                 for (var i = 0; i < Count(); i++)
                 {
                     result.Push(new SparseElement()
@@ -227,13 +326,13 @@ namespace cntema3
                         Val = this[i].Val
                     });
                 }
+
                 result.Sort();
                 return result;
             }
-            
-            public SparseMatrix multiplica(SparseMatrix B)
-            {
 
+            public SparseMatrix Multiply(SparseMatrix B)
+            {
                 B = B.Transpusa();
                 SparseMatrix result = new() {Size = this.Size};
 
@@ -241,13 +340,13 @@ namespace cntema3
                 for (idxA = 0; idxA < Count();)
                 {
                     var r = this[idxA].Row;
-                    for (idxB = 0; idxB < B.Count(); )
+                    for (idxB = 0; idxB < B.Count();)
                     {
                         int c = B[idxB].Row;
                         int tempA = idxA;
                         int tempB = idxB;
 
-                        double sum = 0; 
+                        double sum = 0;
                         while (tempA < Count() && this[tempA].Row == r &&
                                tempB < B.Count() && B[tempB].Row == c)
                         {
@@ -264,8 +363,9 @@ namespace cntema3
                                 sum += this[tempA].Val * B[tempB].Val;
                                 tempA++;
                                 tempB++;
-                            } 
+                            }
                         }
+
                         if (sum != 0)
                             result.Push(new SparseElement() {Row = r, Col = c, Val = sum});
                         while (idxB < B.Count() && B[idxB].Row == c)
@@ -273,41 +373,35 @@ namespace cntema3
                             idxB++;
                         }
                     }
- 
+
                     while (idxA < Count() && this[idxA].Row == r)
                     {
                         idxA++;
                     }
                 }
-                
+
                 return result;
             }
         }
 
-        private static readonly string BasePath = Directory.GetParent(Directory.GetParent(Directory.GetCurrentDirectory()).FullName).FullName;
-        private static readonly string pathMatrixA = $@"{BasePath}\x.txt";
-        private static readonly string pathMatrixB = $@"{BasePath}\y.txt";
-        private static readonly string pathMatrixAplusB = $@"{BasePath}\b.txt";
-        private static readonly string pathMatrixAoriB = $@"{BasePath}\b.txt";
+        private static readonly string BasePath =
+            Directory.GetParent(Directory.GetParent(Directory.GetCurrentDirectory()).FullName).FullName;
+
+        private static readonly string pathMatrixA = $@"{BasePath}\a.txt";
+        private static readonly string pathMatrixB = $@"{BasePath}\b.txt";
+        private static readonly string pathMatrixAplusB = $@"{BasePath}\aplusb.txt";
+        private static readonly string pathMatrixAoriB = $@"{BasePath}\aorib.txt";
+
         public static void Main()
         {
-            Console.WriteLine(pathMatrixA);
             var a = SparseMatrix.ReadSparseMatrix(pathMatrixA);
-            // var b = SparseMatrix.ReadTriDiagonal(pathMatrixB);
-            var b = SparseMatrix.ReadSparseMatrix(pathMatrixB);
-            // var b = new SparseMatrix(pathMatrixB);
-            // Console.WriteLine(a);
-            // Console.WriteLine(b);
-            // var sum = a + b;
-            // sum.Sort();
-            // Console.WriteLine(sum);
-            // var t = a.Transpusa();
-            // t.Sort();
-            // Console.WriteLine(t);
-            var aorib = SparseMatrix.ReadSparseMatrix(pathMatrixA);
-            var product = a.multiplica(b);
-            product.Sort();
-            Console.WriteLine(product);   
+            var b = SparseMatrix.ReadTriDiagonal(pathMatrixB);
+
+            var aplusb = a + b;
+            var aorib = a.Multiply(b);
+            //var givenAplusB = SparseMatrix.ReadSparseMatrix(pathMatrixAplusB);
+            var givenAoriB = SparseMatrix.ReadSparseMatrix(pathMatrixAoriB);
+            Console.WriteLine(givenAoriB == aorib);
         }
     }
 }
